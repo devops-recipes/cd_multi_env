@@ -103,7 +103,6 @@ jobs:
       - OUT: test_app_img_dh
     on_success:
       script:
-        - shipctl put_resource_state_multi "test_cd_gke" "APP_IMG=$APP_IMG APP_TAG=$APP_TAG"
         - shipctl put_resource_state_multi "test_app_img_dh" "versionName=$APP_TAG"
     flags:
       - gke
@@ -137,7 +136,6 @@ jobs:
       - OUT: prod_app_img_dh
     on_success:
       script:
-        - shipctl put_resource_state_multi "prod_cd_gke" "APP_IMG=$APP_IMG APP_TAG=$APP_TAG"
         - shipctl put_resource_state_multi "prod_app_img_dh" "versionName=$APP_TAG"
     flags:
       - gke
