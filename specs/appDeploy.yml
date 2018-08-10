@@ -1,0 +1,27 @@
+apiVersion: apps/v1beta1
+kind: Deployment
+metadata:
+  namespace: ${NAMESPACE}
+  name: ${APP_LABEL}
+spec:
+  replicas: ${REPLICAS}
+  strategy:
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 1
+  minReadySeconds: 5
+  template:
+    metadata:
+      labels:
+        app: ${APP_LABEL}
+    spec:
+      containers:
+      - name: ${APP_LABEL}
+        image: ${APP_IMG}:${APP_TAG}
+        ports:
+        - containerPort: ${APP_PORT}
+        resources:
+          requests:
+            cpu: ${APP_CPU}
+          limits:
+            cpu: ${APP_CPU_LIMIT}

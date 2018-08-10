@@ -1,0 +1,144 @@
+get_img_temp: &get_img
+  - |
+      export APP_IMG=$(shipctl get_resource_version_key $INPUT_IMG_INFO sourceName)
+      export APP_TAG=$(shipctl get_resource_version_key $INPUT_IMG_INFO versionName)
+
+get_cluster_temp: &get_cluster
+  - |
+      gcloud container clusters get-credentials $CLUSTER_NAME --zone $CLUSTER_REGION
+
+deploy_temp: &deploy
+  - |
+      shipctl replace appDeploy.yml appSvc.yml
+      kubectl delete  -f ./appDeploy.yml 2>/dev/null || echo ""
+      kubectl delete -f ./appSvc.yml  2>/dev/null || echo ""
+      kubectl create -o json -f ./appDeploy.yml >> kube_output.json
+      kubectl create -o json -f ./appSvc.yml >> kube_output.json
+      cat kube_output.json
+
+resources:
+# REPO of kube configs
+  - name: multi_env_repo
+    type: gitRepo
+    integration: "dr_gh"
+    versionTemplate:
+      sourceName: "devops-recipes/cd_multi_env_gke_kubectl"
+      branch: master
+
+# gcloud CLI Config
+  - name: gcp_cli
+    type: cliConfig
+    integration: "dr_gcp"
+    versionTemplate:
+      region: "us-west1-a"
+
+# Test Env Params
+  - name: test_multi_env_prms
+    type: params
+    versionTemplate:
+      params:
+        CLUSTER_NAME: "cluster"
+        CLUSTER_REGION: "us-west1-a"
+        NAMESPACE: "test"
+        APP_LABEL: "test-app"
+        APP_CPU: 125m
+        APP_CPU_LIMIT: 250m
+        APP_PORT: 80
+        REPLICAS: 1
+
+# Test Deployed Image Version
+  - name: test_app_img_dh
+    type: image
+    integration: dr_dockerhub # replace with your integration name
+    versionTemplate:
+      sourceName: "devopsrecipes/node_app" # replace with your Hub URL
+      versionName: "tbd"
+
+# Prod Env Params
+  - name: prod_multi_env_prms
+    type: params
+    versionTemplate:
+      params:
+        CLUSTER_NAME: "cluster"
+        CLUSTER_REGION: "us-west1-a"
+        NAMESPACE: "prod"
+        APP_LABEL: "prod-app"
+        APP_CPU: 250m
+        APP_CPU_LIMIT: 500m
+        APP_PORT: 80
+        REPLICAS: 2
+
+# Prod Deployed Image Version
+  - name: prod_app_img_dh
+    type: image
+    integration: dr_dockerhub # replace with your integration name
+    versionTemplate:
+      sourceName: "devopsrecipes/node_app" # replace with your Hub URL
+      versionName: "tbd"
+
+jobs:
+  - name: test_cd_gke
+    type: runSh
+    dependencyMode: strict
+    steps:
+      - IN: node_app_img_dh # defined here https://github.com/devops-recipes/node_app/blob/master/shippable.yml
+      - IN: test_multi_env_prms
+        switch: off
+      - IN: gcp_cli
+        switch: off
+      - IN: multi_env_repo
+        switch: off
+      - TASK:
+          name: deploy_app
+          runtime:
+            options:
+              env:
+                - INPUT_IMG_INFO: "node_app_img_dh"
+          script:
+            - pushd $(shipctl get_resource_state "multi_env_repo")/specs
+            - *get_img
+            - *get_cluster
+            - *deploy
+            - popd
+      - OUT: test_app_img_dh
+    on_success:
+      script:
+        - shipctl put_resource_state_multi "test_cd_gke" "APP_IMG=$APP_IMG APP_TAG=$APP_TAG"
+        - shipctl put_resource_state_multi "test_app_img_dh" "versionName=$APP_TAG"
+    flags:
+      - gke
+      - cd
+      - multi_env
+
+  - name: prod_cd_gke
+    type: runSh
+    dependencyMode: strict
+    steps:
+      - IN: test_app_img_dh
+      - IN: prod_multi_env_prms
+        switch: off
+      - IN: gcp_cli
+        switch: off
+      - IN: multi_env_repo
+        switch: off
+      - TASK:
+          name: deploy_app
+          runtime:
+            options:
+              env:
+                - INPUT_IMG_INFO: "test_app_img_dh"
+          script:
+            - pushd $(shipctl get_resource_state "multi_env_repo")/specs
+            - *get_img
+            - *get_cluster
+            - *deploy
+            - popd
+      - OUT: prod_app_img_dh
+    on_success:
+      script:
+        - shipctl put_resource_state_multi "prod_cd_gke" "APP_IMG=$APP_IMG APP_TAG=$APP_TAG"
+        - shipctl put_resource_state_multi "prod_app_img_dh" "versionName=$APP_TAG"
+    flags:
+      - gke
+      - cd
+      - multi_env
