@@ -37,7 +37,7 @@ resources:
     type: params
     versionTemplate:
       params:
-        CLUSTER_NAME: "cluster"
+        CLUSTER_NAME: "test-cluster"
         CLUSTER_REGION: "us-west1-a"
         NAMESPACE: "test"
         APP_LABEL: "test-app"
@@ -59,7 +59,7 @@ resources:
     type: params
     versionTemplate:
       params:
-        CLUSTER_NAME: "cluster"
+        CLUSTER_NAME: "test-cluster"
         CLUSTER_REGION: "us-west1-a"
         NAMESPACE: "prod"
         APP_LABEL: "prod-app"
