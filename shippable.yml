@@ -115,6 +115,7 @@ jobs:
     dependencyMode: strict
     steps:
       - IN: test_app_img_dh
+        switch: off
       - IN: prod_multi_env_prms
         switch: off
       - IN: multi_env_repo
