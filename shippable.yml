@@ -37,8 +37,8 @@ resources:
     type: params
     versionTemplate:
       params:
-        CLUSTER_NAME: "test-cluster"
-        CLUSTER_REGION: "us-east1-d"
+        CLUSTER_NAME: "cluster"
+        CLUSTER_REGION: "us-west1-a"
         NAMESPACE: "test"
         APP_LABEL: "test-app"
         APP_CPU: 125m
@@ -59,8 +59,8 @@ resources:
     type: params
     versionTemplate:
       params:
-        CLUSTER_NAME: "test-cluster"
-        CLUSTER_REGION: "us-east1-d"
+        CLUSTER_NAME: "cluster"
+        CLUSTER_REGION: "us-west1-a"
         NAMESPACE: "prod"
         APP_LABEL: "prod-app"
         APP_CPU: 250m
