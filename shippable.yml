@@ -1,3 +1,34 @@
+get_max_ver_temp: &get_max_ver
+  - |
+      B1="$(cut -d'.' -f1 <<< $BASE_VER )"
+      B2="$(cut -d'.' -f2 <<< $BASE_VER )"
+      B3="$(cut -d'.' -f3 <<< $BASE_VER )"
+      C1="$(cut -d'.' -f1 <<< $CURR_VER )"
+      C2="$(cut -d'.' -f2 <<< $CURR_VER )"
+      C3="$(cut -d'.' -f3 <<< $CURR_VER )"
+
+      if [ $B1 -gt $C1 ]; then
+        HIGH_VER=$BASE_VER
+      else
+        if [ $C1 -gt $B1 ]; then
+          HIGH_VER=$CURR_VER
+        else
+          if [ $B2 -gt $C2 ]; then
+            HIGH_VER=$BASE_VER
+          else
+            if [ $C2 -gt $B2 ]; then
+              HIGH_VER=$CURR_VER
+            else
+              if [ $B3 -gt $C3 ]; then
+                HIGH_VER=$BASE_VER
+              else
+                HIGH_VER=$CURR_VER
+              fi
+            fi
+          fi
+        fi
+      fi
+
 get_img_temp: &get_img
   - |
       export APP_IMG=$(shipctl get_resource_version_key $INPUT_IMG_INFO sourceName)
@@ -34,13 +65,18 @@ resources:
     versionTemplate:
       region: "us-west1-a"
 
+# jFrog Docker CLI Config
+  - name: jfrog_docker_cli
+    type: cliConfig
+    integration: "docker_repo"
+
 # Test Deployed Image Version
   - name: test_pass_img
     type: image
     integration: docker_repo # replace with your integration name
     versionTemplate:
       sourceName: "tbd" # replace with your Hub URL
-      versionName: "tbd"
+      versionName: "0.0.0"
 
 # Prod Deployed Image Version
   - name: prod_deployed_img
@@ -48,7 +84,7 @@ resources:
     integration: docker_repo # replace with your integration name
     versionTemplate:
       sourceName: "tbd" # replace with your Hub URL
-      versionName: "tbd"
+      versionName: "0.0.0"
 
 jobs:
   - name: test_cd_gke
@@ -56,6 +92,8 @@ jobs:
     dependencyMode: strict
     steps:
       - IN: node_app_img_jf # defined here https://github.com/devops-recipes/node_app/blob/master/shippable.yml
+      - IN: jfrog_docker_cli
+        switch: off
       - IN: gcp_gke_cluster
         switch: off
       - IN: multi_env_repo
@@ -77,9 +115,17 @@ jobs:
                 - REPLICAS: 1
           script:
             - pushd $(shipctl get_resource_state "multi_env_repo")/specs
+            - BASE_VER=$(shipctl get_resource_version_key node_app_img_jf versionName)
+            - CURR_VER=$(shipctl get_resource_version_key test_pass_img versionName)
+            - *get_max_ver
+            - NEW_VERSION="$(shipctl bump_version $HIGH_VER rc)"
+            - echo $NEW_VERSION
             - *get_img
             - *get_cluster
             - *deploy
+            - docker pull $APP_IMG/$APP_TAG
+            - docker tag $APP_IMG/$APP_TAG $APP_IMG/$NEW_VERSION
+            - docker push $APP_IMG/$NEW_VERSION
             - popd
       - OUT: test_pass_img
     on_success:
@@ -94,6 +140,8 @@ jobs:
     type: runSh
     dependencyMode: strict
     steps:
+      - IN: jfrog_docker_cli
+        switch: off
       - IN: test_pass_img
         switch: off
       - IN: gcp_gke_cluster
