@@ -12,8 +12,6 @@ get_cluster_temp: &get_cluster
 deploy_temp: &deploy
   - |
       shipctl replace appDeploy.yml appSvc.yml
-      cat appDeploy.yml
-      cat appSvc.yml
       kubectl delete  -f ./appDeploy.yml 2>/dev/null || echo ""
       kubectl delete -f ./appSvc.yml  2>/dev/null || echo ""
       kubectl create -o json -f ./appDeploy.yml >> kube_output.json
@@ -97,6 +95,8 @@ jobs:
     dependencyMode: strict
     steps:
       - IN: test_pass_img
+        switch: off
+      - IN: gcp_gke_cluster
         switch: off
       - IN: multi_env_repo
         switch: off
