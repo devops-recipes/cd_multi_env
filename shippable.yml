@@ -1,3 +1,8 @@
+get_cluster_temp: &get_cluster
+  - |
+      export CLUSTER_NAME=$(shipctl get_resource_version_key $TARGET_CLUSTER_INFO sourceName)
+      export CLUSTER_REGION=$(shipctl get_resource_version_key $TARGET_CLUSTER_INFO region)
+
 get_img_temp: &get_img
   - |
       export APP_IMG=$(shipctl get_resource_version_key $INPUT_IMG_INFO sourceName)
@@ -37,8 +42,8 @@ resources:
     type: params
     versionTemplate:
       params:
-        CLUSTER_NAME: "cluster"
-        CLUSTER_REGION: "us-west1-a"
+#        CLUSTER_NAME: "cluster"
+#        CLUSTER_REGION: "us-west1-a"
         NAMESPACE: "test"
         APP_LABEL: "test-app"
         APP_CPU: 125m
@@ -47,11 +52,11 @@ resources:
         REPLICAS: 1
 
 # Test Deployed Image Version
-  - name: test_app_img_dh
+  - name: test_pass_img
     type: image
-    integration: dr_dockerhub # replace with your integration name
+    integration: docker_repo # replace with your integration name
     versionTemplate:
-      sourceName: "devopsrecipes/node_app" # replace with your Hub URL
+      sourceName: "tbd" # replace with your Hub URL
       versionName: "tbd"
 
 # Prod Env Params
@@ -59,8 +64,8 @@ resources:
     type: params
     versionTemplate:
       params:
-        CLUSTER_NAME: "cluster"
-        CLUSTER_REGION: "us-west1-a"
+#        CLUSTER_NAME: "cluster"
+#        CLUSTER_REGION: "us-west1-a"
         NAMESPACE: "prod"
         APP_LABEL: "prod-app"
         APP_CPU: 250m
@@ -69,11 +74,11 @@ resources:
         REPLICAS: 2
 
 # Prod Deployed Image Version
-  - name: prod_app_img_dh
+  - name: prod_deployed_img
     type: image
-    integration: dr_dockerhub # replace with your integration name
+    integration: docker_repo # replace with your integration name
     versionTemplate:
-      sourceName: "devopsrecipes/node_app" # replace with your Hub URL
+      sourceName: "tbd" # replace with your Hub URL
       versionName: "tbd"
 
 jobs:
@@ -81,7 +86,9 @@ jobs:
     type: runSh
     dependencyMode: strict
     steps:
-      - IN: node_app_img_dh # defined here https://github.com/devops-recipes/node_app/blob/master/shippable.yml
+      - IN: node_app_img_jf # defined here https://github.com/devops-recipes/node_app/blob/master/shippable.yml
+      - IN: gcp_gke_cluster
+        switch: off
       - IN: test_multi_env_prms
         switch: off
       - IN: multi_env_repo
@@ -94,16 +101,17 @@ jobs:
             options:
               env:
                 - INPUT_IMG_INFO: "node_app_img_dh"
+                - TARGET_CLUSTER_INFO: "gcp_gke_cluster"
           script:
             - pushd $(shipctl get_resource_state "multi_env_repo")/specs
             - *get_img
             - *get_cluster
             - *deploy
             - popd
-      - OUT: test_app_img_dh
+      - OUT: test_pass_img
     on_success:
       script:
-        - shipctl put_resource_state_multi "test_app_img_dh" "versionName=$APP_TAG"
+        - shipctl put_resource_state_multi "test_pass_img" "versionName=$APP_TAG sourceName=$APP_IMG"
     flags:
       - gke
       - cd
@@ -113,7 +121,7 @@ jobs:
     type: runSh
     dependencyMode: strict
     steps:
-      - IN: test_app_img_dh
+      - IN: test_pass_img
         switch: off
       - IN: prod_multi_env_prms
         switch: off
@@ -126,17 +134,17 @@ jobs:
           runtime:
             options:
               env:
-                - INPUT_IMG_INFO: "test_app_img_dh"
+                - INPUT_IMG_INFO: "test_pass_img"
           script:
             - pushd $(shipctl get_resource_state "multi_env_repo")/specs
             - *get_img
             - *get_cluster
             - *deploy
             - popd
-      - OUT: prod_app_img_dh
+      - OUT: prod_deployed_img
     on_success:
       script:
-        - shipctl put_resource_state_multi "prod_app_img_dh" "versionName=$APP_TAG"
+        - shipctl put_resource_state_multi "prod_deployed_img" "versionName=$APP_TAG sourceName=$APP_IMG"
     flags:
       - gke
       - cd
