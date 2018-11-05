@@ -121,13 +121,11 @@ jobs:
             - NEW_VERSION="$(shipctl bump_version $HIGH_VER rc)"
             - echo $NEW_VERSION
             - *get_img
-            - echo $APP_IMG
-            - echo $APP_TAG
             - *get_cluster
             - *deploy
-            - docker pull $APP_IMG/$APP_TAG
-            - docker tag $APP_IMG/$APP_TAG $APP_IMG/$NEW_VERSION
-            - docker push $APP_IMG/$NEW_VERSION
+            - docker pull $APP_IMG:$APP_TAG
+            - docker tag $APP_IMG:$APP_TAG $APP_IMG:$NEW_VERSION
+            - docker push $APP_IMG:$NEW_VERSION
             - popd
       - OUT: test_pass_img
     on_success:
