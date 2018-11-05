@@ -36,20 +36,6 @@ resources:
     versionTemplate:
       region: "us-west1-a"
 
-# Test Env Params
-  - name: test_multi_env_prms
-    type: params
-    versionTemplate:
-      params:
-#        CLUSTER_NAME: "cluster"
-#        CLUSTER_REGION: "us-west1-a"
-        NAMESPACE: "test"
-        APP_LABEL: "test-app"
-        APP_CPU: 125m
-        APP_CPU_LIMIT: 250m
-        APP_PORT: 80
-        REPLICAS: 1
-
 # Test Deployed Image Version
   - name: test_pass_img
     type: image
@@ -57,20 +43,6 @@ resources:
     versionTemplate:
       sourceName: "tbd" # replace with your Hub URL
       versionName: "tbd"
-
-# Prod Env Params
-  - name: prod_multi_env_prms
-    type: params
-    versionTemplate:
-      params:
-#        CLUSTER_NAME: "cluster"
-#        CLUSTER_REGION: "us-west1-a"
-        NAMESPACE: "prod"
-        APP_LABEL: "prod-app"
-        APP_CPU: 250m
-        APP_CPU_LIMIT: 500m
-        APP_PORT: 80
-        REPLICAS: 2
 
 # Prod Deployed Image Version
   - name: prod_deployed_img
@@ -88,8 +60,6 @@ jobs:
       - IN: node_app_img_jf # defined here https://github.com/devops-recipes/node_app/blob/master/shippable.yml
       - IN: gcp_gke_cluster
         switch: off
-      - IN: test_multi_env_prms
-        switch: off
       - IN: multi_env_repo
         switch: off
       - IN: multi_env_gcp_cli
@@ -101,6 +71,12 @@ jobs:
               env:
                 - INPUT_IMG_INFO: "node_app_img_jf"
                 - TARGET_CLUSTER_INFO: "gcp_gke_cluster"
+                - NAMESPACE: "test"
+                - APP_LABEL: "test-app"
+                - APP_CPU: 125m
+                - APP_CPU_LIMIT: 250m
+                - APP_PORT: 80
+                - REPLICAS: 1
           script:
             - pushd $(shipctl get_resource_state "multi_env_repo")/specs
             - *get_img
@@ -122,8 +98,6 @@ jobs:
     steps:
       - IN: test_pass_img
         switch: off
-      - IN: prod_multi_env_prms
-        switch: off
       - IN: multi_env_repo
         switch: off
       - IN: multi_env_gcp_cli
@@ -135,6 +109,12 @@ jobs:
               env:
                 - INPUT_IMG_INFO: "test_pass_img"
                 - TARGET_CLUSTER_INFO: "gcp_gke_cluster"
+                - NAMESPACE: "prod"
+                - APP_LABEL: "prod-app"
+                - APP_CPU: 250m
+                - APP_CPU_LIMIT: 500m
+                - APP_PORT: 80
+                - REPLICAS: 2
           script:
             - pushd $(shipctl get_resource_state "multi_env_repo")/specs
             - *get_img
