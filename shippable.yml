@@ -99,7 +99,7 @@ jobs:
           runtime:
             options:
               env:
-                - INPUT_IMG_INFO: "node_app_img_dh"
+                - INPUT_IMG_INFO: "node_app_img_jf"
                 - TARGET_CLUSTER_INFO: "gcp_gke_cluster"
           script:
             - pushd $(shipctl get_resource_state "multi_env_repo")/specs
@@ -134,6 +134,7 @@ jobs:
             options:
               env:
                 - INPUT_IMG_INFO: "test_pass_img"
+                - TARGET_CLUSTER_INFO: "gcp_gke_cluster"
           script:
             - pushd $(shipctl get_resource_state "multi_env_repo")/specs
             - *get_img
