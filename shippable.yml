@@ -165,9 +165,17 @@ jobs:
                 - REPLICAS: 2
           script:
             - pushd $(shipctl get_resource_state "multi_env_repo")/specs
+            - BASE_VER=$(shipctl get_resource_version_key test_pass_img versionName)
+            - CURR_VER=$(shipctl get_resource_version_key prod_deployed_img versionName)
+            - *get_max_ver
+            - NEW_VERSION="$(shipctl bump_version $HIGH_VER rc)"
+            - echo $NEW_VERSION
             - *get_img
             - *get_cluster
             - *deploy
+            - docker pull $APP_IMG:$APP_TAG
+            - docker tag $APP_IMG:$APP_TAG $APP_IMG:$NEW_VERSION
+            - docker push $APP_IMG:$NEW_VERSION
             - popd
       - OUT: prod_deployed_img
     on_success:
