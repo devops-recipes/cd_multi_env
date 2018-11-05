@@ -1,8 +1,3 @@
-get_cluster_temp: &get_cluster
-  - |
-      export CLUSTER_NAME=$(shipctl get_resource_version_key $TARGET_CLUSTER_INFO sourceName)
-      export CLUSTER_REGION=$(shipctl get_resource_version_key $TARGET_CLUSTER_INFO region)
-
 get_img_temp: &get_img
   - |
       export APP_IMG=$(shipctl get_resource_version_key $INPUT_IMG_INFO sourceName)
@@ -10,6 +5,8 @@ get_img_temp: &get_img
 
 get_cluster_temp: &get_cluster
   - |
+      export CLUSTER_NAME=$(shipctl get_resource_version_key $TARGET_CLUSTER_INFO sourceName)
+      export CLUSTER_REGION=$(shipctl get_resource_version_key $TARGET_CLUSTER_INFO region)
       gcloud container clusters get-credentials $CLUSTER_NAME --zone $CLUSTER_REGION
 
 deploy_temp: &deploy
