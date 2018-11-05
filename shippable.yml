@@ -168,7 +168,7 @@ jobs:
             - BASE_VER=$(shipctl get_resource_version_key test_pass_img versionName)
             - CURR_VER=$(shipctl get_resource_version_key prod_deployed_img versionName)
             - *get_max_ver
-            - NEW_VERSION="$(shipctl bump_version $HIGH_VER rc)"
+            - NEW_VERSION="$(shipctl bump_version $HIGH_VER final)"
             - echo $NEW_VERSION
             - *get_img
             - *get_cluster
