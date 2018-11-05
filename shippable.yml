@@ -130,7 +130,7 @@ jobs:
       - OUT: test_pass_img
     on_success:
       script:
-        - shipctl put_resource_state_multi "test_pass_img" "versionName=$APP_TAG sourceName=$APP_IMG"
+        - shipctl put_resource_state_multi "test_pass_img" "versionName=$NEW_VERSION sourceName=$APP_IMG"
     flags:
       - gke
       - cd
@@ -180,7 +180,7 @@ jobs:
       - OUT: prod_deployed_img
     on_success:
       script:
-        - shipctl put_resource_state_multi "prod_deployed_img" "versionName=$APP_TAG sourceName=$APP_IMG"
+        - shipctl put_resource_state_multi "prod_deployed_img" "versionName=$NEW_VERSION sourceName=$APP_IMG"
     flags:
       - gke
       - cd
